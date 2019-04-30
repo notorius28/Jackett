@@ -80,7 +80,7 @@
       - {id: 134, cat: Books, desc: "eBooks - Manga"}
       - {id: 132, cat: Books/Magazines, desc: "eBooks - Revistas"}
       - {id: 7, cat: Books/Other, desc: "eBooks - Otros"}
-      - {id: 133, cat: Books, desc: "eBooks - Adulto (+18)"}    
+      - {id: 133, cat: Books, desc: "eBooks - Adulto (+18)"}
       - {id: 92, cat: Other, desc: "Otros formatos - Animación"}
       - {id: 93, cat: Other, desc: "Otros formatos - Deportes"}
       - {id: 94, cat: Other, desc: "Otros formatos - Documentales"}
@@ -91,6 +91,8 @@
       - {id: 10, cat: Other, desc: "Otros formatos - Estrenos"}
     modes:
       search: [q]
+      tv-search: [q, season, ep]
+      movie-search: [q]
 
   login:
     path: index.php?page=login
@@ -108,7 +110,9 @@
     path: index.php
     keywordsfilters:
       - name: re_replace
-        args: ["S0?(\\d{1,2})E(\\d{1,2})", "T$1 $2"]
+        args: ["S0?(\\d{1,2})E(\\w{1,2})", "$1 $2"] #season+episode search
+      - name: re_replace
+        args: ["S0?(\\d{1,2})", "$1"] #season pack search
     inputs:
       page: "torrents"
       $raw: "&category={{range .Categories}}{{.}};{{end}}"
@@ -126,8 +130,41 @@
       title:
         selector: td:nth-child(2) a
         filters:
-          - name: append
-            args: " [spanish]"
+          - name: re_replace
+            args: ["\\(","["]
+          - name: re_replace
+            args: ["\\)","]"]
+        # tvshows parser
+          - name: re_replace
+            args: ["\\[Temp. ?(\\d{1,2})\\]a*.\\[?(\\[.*])a*.\\[?(\\d{1,2}) \\/.{1,3}\\]"," S0$1E$3 $2"] # Episodes
+          - name: re_replace
+            args: ["\\[Temp. ?(\\d{1,2})\\]?(.*\\]).*Completa"," S0$1 $2"] #season pack
+        # quality parser
+          - name: re_replace
+            args: ["(?i)M720", "Micro 720"]
+          - name: re_replace
+            args: ["(?i)M1080", "Micro 1080"]
+          - name: re_replace
+            args: ["(?i)MHD", "Micro HD "]
+          - name: re_replace
+            args: ["(?i)BR ", "Bluray "]
+          - name: re_replace
+            args: ["(?i)B[DR]RIP", "Bluray"]
+        # language parser
+          - name: re_replace
+            args: ["(?i)Castellano", "Spanish"]
+          - name: re_replace
+            args: ["(?i)Dual","Spanish-English"]
+          - name: re_replace
+            args: ["(?i)CAST","Spanish"]
+          - name: re_replace
+            args: ["(?i)CAST","Spanish"]
+          - name: re_replace
+            args: ["(?i)(AC3|DTS)[\\[\\(]E[SN][].E[SN][\\]\\)]","$1 [Spanish-English]"]
+          - name: re_replace
+            args: ["(?i)(AC3|DTS)[\\[\\(]ES[\\]\\)]","$1 [Spanish]"]
+
+
       details:
         selector: td:nth-child(3) a
         attribute: href
@@ -158,12 +195,12 @@
       download:
         selector: a[href^="download.php"]
         attribute: href
-      downloadvolumefactor: 
+      downloadvolumefactor:
         case:
           img[src$="golden.gif"]: "0"
           img[src$="silver.gif"]: "0.5"
           "*": "1"
-      uploadvolumefactor: 
+      uploadvolumefactor:
           case:
             img[src$="x2.gif"]: "2"
             img[src$="x3.gif"]: "3"

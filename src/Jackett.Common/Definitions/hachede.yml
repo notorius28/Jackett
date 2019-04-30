@@ -60,8 +60,8 @@
       - {id: 129, cat: Other/Misc, desc: "Documentales H265"}
     modes:
       search: [q]
-      tv-search: [q, season, ep]
-      movie-search: [q]
+      tv-search: [q, season, ep, imdb]
+      movie-search: [q, imdb]
 
   login:
     path: ajax/login.php
@@ -83,13 +83,18 @@
   search:
     path: /
     keywordsfilters:
-      - name: re_replace
-        args: ["S0?(\\d{1,2})E(\\d{1,2})", "$1x$2"]
+      - name: re_replace #season+episode
+        args: ["S0?(\\d{1,2})E(\\d{1,2})", "$1 $2"]
+      - name: re_replace #season pack
+        args: ["S0?(\\d{1,2})", "$1"]
     inputs:
       p: "torrents"
       page: "1"
       pid: "10"
       $raw: "{{range .Categories}}&cid[]={{.}}{{end}}"
+      search: "{{if .Query.IMDBID}}{{ .Query.IMDBID }}{{else}}{{ .Keywords }}{{end}}" # If
+                 # an IMDB ID has been specified use it. Otherwise use the search keywords.
+      imdb_search: "{{ if .Query.IMDBID }}yes{{else}}{{end}}"
       keywords: "{{ .Keywords }}"
       search_type: "name"
       searchin: "title"
@@ -99,8 +104,48 @@
       title:
         selector: td.torrent_name > a, .newIndicator > a
         filters:
-          - name: append
-            args: " [spanish]"
+          #season parser
+          - name: re_replace
+            args: ["(?i)Primera Temporada", "T1"]
+          - name: re_replace
+            args: ["(?i)Segunda Temporada", "T2"]
+          - name: re_replace
+            args: ["(?i)Tercera Temporada", "T3"]
+          - name: re_replace
+            args: ["(?i)Cuarta Temporada", "T4"]
+          - name: re_replace
+            args: ["(?i)Quinta Temporada", "T5"]
+          - name: re_replace
+            args: ["(?i)\\[MEGAPACK\\](.*) (Temporada |T)(\\d{1,2}).*?(\\[.*)", "$1 S0$3 $4"]
+        # episode parser
+          - name: re_replace
+            args: ["(?i)\\[(\\d{1,2})x(\\d{1,2})]", "S0$1E$2"]
+        # quality parser
+          - name: re_replace
+            args: ["(?i)M720", "Micro 720"]
+          - name: re_replace
+            args: ["(?i)M1080", "Micro 1080"]
+          - name: re_replace
+            args: ["(?i)MHD", "Micro HD "]
+          - name: re_replace
+            args: ["(?i)BR ", "Bluray "]
+          - name: re_replace
+            args: ["(?i)B[DR]RIP", "Bluray"]
+          - name: re_replace
+            args: ["(?i)HDiT", "HDTV"]
+        # language parser
+          - name: re_replace
+            args: ["(?i)Castellano", "Spanish"]
+          - name: re_replace
+            args: ["(?i)Dual","Spanish-English"]
+          - name: re_replace
+            args: ["(?i)CAST","Spanish"]
+          - name: re_replace
+            args: ["(?i)CAST","Spanish"]
+          - name: re_replace
+            args: ["(?i)(AC3|DTS)[\\[\\(]E[SN].E[SN][\\]\\)]","$1 [Spanish-English]"]
+          - name: re_replace
+            args: ["(?i)(AC3|DTS)[\\[\\(]ES[\\]\\)]","$1 [Spanish]"]
       details:
         selector: td.torrent_name > a, .newIndicator > a
         attribute: href
@@ -135,7 +180,7 @@
           - name: regexp
             args: "(?<=Subido )(.*)(?= por)"
           - name: dateparse
-            args: "02-01-2006 15:04"    
+            args: "02-01-2006 15:04"
       downloadvolumefactor:
         text: "1"
       downloadvolumefactor:
