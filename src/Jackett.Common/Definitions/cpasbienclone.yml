@@ -7,44 +7,64 @@
   encoding: UTF-8
   followredirect: true
   links:
-    - https://cpasbiens.cm/
+    - https://cpasbien.to/
+    - https://cpasbiens.black-mirror.xyz/
+    - https://cpasbiens.unblocked.casa/
+    - https://cpasbiens.proxyportal.fun/
+    - https://cpasbiens.uk-unblock.xyz/
+    - https://cpasbiens.ind-unblock.xyz/
   legacylinks:
     - https://www1.cpasbiens.ws/
     - https://www2.cpasbiens.ws/
+    - https://cpasbiens.cm/
+    - https://www1.cpasbiens.cm/
 
   caps:
     categorymappings:
       - {id: films, cat: Movies, desc: "Movies"}
       - {id: series, cat: TV, desc: "TV"}
-      - {id: musique, cat: Audio, desc: "Music"}
-      - {id: ebook, cat: Books, desc: "Ebook"}
-      - {id: logiciels, cat: PC, desc: "Software"}
-      - {id: jeux-pc, cat: PC/Games, desc: "PC Games"}
-      - {id: jeux-consoles, cat: Console, desc: "Console Games"}
+      - {id: other, cat: Other, desc: "Other"}
 
     modes:
       search: [q]
       tv-search: [q, season, ep]
       movie-search: [q]
 
-  settings: []
+  settings:
+    - name: sort
+      type: select
+      label: Sort requested from site (Only works for searches with Keywords)
+      default: "?trie-date-d"
+      options:
+        "?trie-date-d": "created desc"
+        "?trie-date-a": "created asc"
+        "?trie-seeds-d": "seeders desc"
+        "?trie-seeds-a": "seeders asc"
+        "?trie-poid-d": "size desc"
+        "?trie-poid-a": "size asc"
+        "?trie-nom-d": "title desc"
+        "?trie-nom-a": "title asc"
 
   download:
-    selector: div.btn-download a
+    selector: a[href^="magnet:"]
     attribute: href
 
   search:
     paths:
-      - path: "{{if .Keywords}}recherche/{{.Keywords}}{{else}}{{end}}"
+      - path: "{{ if .Keywords }}search_torrent/{{ .Keywords }}{{ .Config.sort }}{{else}}{{end}}"
+
     rows:
       selector: table.table-corps > tbody > tr:has(a)
+
     fields:
+      category:
+        text: other
       site_date:
         selector: a
         filters:
-          # date is at the end of the title, so we get it and name it site_date
+          # year can be at the end of the title, so we get it and name it site_date
           - name: regexp
-            args: "(\\w+)$"
+            args: "(\\d{4})$"
       title:
         selector: a
         filters:
@@ -59,7 +79,7 @@
             args: ["VOSTFR", "{{ .Result.site_date }} VOSTFR"]
           # and we delete it at the end
           - name: re_replace
-            args: ["(\\w+)$", ""]
+            args: ["(\\d{4})$", ""]
       details:
         selector: a
         attribute: href
@@ -87,8 +107,11 @@
             args: [ "To", "000000000000"]
           - name: replace
             args: [ "X", "" ]
+            # this is for the search with keywords which returns sizes nnnnn.n without unit indicator.
+          - name: re_replace
+            args: [ "(\\d+)\\.\\d", "$1 MB"]
       date:
-        text: "now"
+        text: now
       seeders:
         text: 0
       seeders:
@@ -100,6 +123,7 @@
         selector: div.down
         optional: true
       downloadvolumefactor:
-        text: "0"
+        text: 0
       uploadvolumefactor:
-        text: "1"
+        text: 1
+# engine n/a

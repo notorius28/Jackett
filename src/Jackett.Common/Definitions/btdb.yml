@@ -5,11 +5,19 @@
   language: en-us
   type: public
   encoding: UTF-8
+  followredirect: true
   links:
-    -  https://btdb.eu/
+    - https://btdb.io/
+    - https://btdb.unblockit.pro/
+    - https://btdb.black-mirror.xyz/
+    - https://btdb.unblocked.casa/
+    - https://btdb.proxyportal.fun/
+    - https://btdb.uk-unblock.xyz/
+    - https://btdb.ind-unblock.xyz/
   legacylinks:
-    -  https://btdb.to/
-    -  https://btdb.unblocked.app/
+    - https://btdb.to/
+    - https://btdb.unblocked.app/
+    - https://btdb.eu/
 
   caps:
     categorymappings:
@@ -25,40 +33,68 @@
       type: info
       label: Category for Sonarr and Radarr
       default: BTDB does not use categories. In your Sonarr or Radarr Torznab Indexer settings, set the category to 100001.
+    - name: sort
+      type: select
+      label: Sort requested from site
+      default: "time"
+      options:
+        "time": "created"
+        "length": "size"
+        "seeders": "seeders"
 
   search:
     paths:
-      - path: "{{if .Keywords}}?search={{ .Keywords}}&sort=time{{else}}recent{{end}}"
-      - path: "{{if .Keywords}}?search={{ .Keywords}}&sort=time&page=2{{else}}{{end}}"
-      - path: "{{if .Keywords}}?search={{ .Keywords}}&sort=time&page=3{{else}}{{end}}"
-      - path: "{{if .Keywords}}?search={{ .Keywords}}&sort=time&page=4{{else}}{{end}}"
+      - path: "{{ if .Keywords }}search/{{ .Keywords }}/{{else}}recent{{end}}?sort={{ .Config.sort }}"
+      - path: "{{ if .Keywords }}search/{{ .Keywords }}/{{else}}recent{{end}}?sort={{ .Config.sort }}&page=2"
+      - path: "{{ if .Keywords }}search/{{ .Keywords }}/{{else}}recent{{end}}?sort={{ .Config.sort }}&page=3"
+      - path: "{{ if .Keywords }}search/{{ .Keywords }}/{{else}}recent{{end}}?sort={{ .Config.sort }}&page=4"
+      - path: "{{ if .Keywords }}search/{{ .Keywords }}/{{else}}recent{{end}}?sort={{ .Config.sort }}&page=5"
+
     rows:
-      selector: li[class$="item"]
+      selector: div.media
+
     fields:
-      title:
-        selector: h2[class$="title"] a[href*="/torrent/"]
-        attribute: title
       category:
-        text: "1"
+        text: 1
+      title:
+        selector: a[href*="/torrent/"]
       details:
-        selector: h2[class$="title"] a[href*="/torrent/"]
+        selector: a[href*="/torrent/"]
         attribute: href
+      download:
+         # download can be missing despite icon being present. Fortunately the magnet is always there
+        selector: a[href$=".torrent"]
+        attribute: href
+        optional: true
       magnet:
-        selector: div[class$="info"] a[href^="magnet:?xt="]
+        selector: a[href^="magnet:?xt="]
         attribute: href
+      banner:
+        selector: a.img-thumbnail img
+        attribute: src
+        filters:
+          - name: replace
+            args: ["https://btdb.io/assets/img/placeholder.png", ""]
       size:
-        selector: div[class$="info"] span:nth-of-type(1)
+        selector: small:nth-of-type(1) strong
       files:
-        selector: div[class$="info"] span:nth-of-type(2)
-      date:
-        selector: div[class$="info"] span:nth-of-type(3)
-      grabs:
-        selector: div[class$="info"] span:nth-of-type(4)
+        selector: small:nth-of-type(2) strong
       seeders:
-        text: 1
+        selector: small:nth-of-type(3) strong
+        filters:
+          - name: replace
+            args: [",", ""]
       leechers:
-        text: 1
+        selector: small:nth-of-type(4) strong
+        filters:
+          - name: replace
+            args: [",", ""]
+      date:
+        selector: small:nth-of-type(5) strong
+        filters:
+          - name: timeago
       downloadvolumefactor:
-        text: "0"
+        text: 0
       uploadvolumefactor:
-        text: "1"
+        text: 1
+# engine n/a

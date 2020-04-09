@@ -5,14 +5,20 @@
   language: en-us
   type: public
   encoding: UTF-8
+  followredirect: true
   links:
-    - https://kat.li/
+    - https://kickass.ws/
+    - https://kickass.unblockit.pro/
   legacylinks:
     - https://kickass.gg/
     - https://katcr.io/
-    - https://thekat.nz/  
+    - https://thekat.nz/
     - https://thekat.se/
     - https://kat.how/
+    - https://kat.li/
+    - https://kickasstorrents.unblockninja.com/ # kickasstorrent proxy, not kickasstorrent-kathow
+    - https://katcr.to/ # possible 3rd kickasstorrent site/clone?
+    - https://kickasstorrent.cr/ # possible 3rd kickasstorrent site/clone?
 
   caps:
     categories:
@@ -20,42 +26,81 @@
       tv: TV
       music: Audio
       books: Books
-      Games: Console
+      games: Console
       applications: PC
       xxx: XXX
       other: Other
+      # additional from proxy
+      video: TV # ,Movies
+      porn: XXX
+      audio: Audio
 
     modes:
       search: [q]
       tv-search: [q, season, ep]
+      movie-search: [q]
 
-  settings: []
+  settings:
+    - name: sort
+      type: select
+      label: Sort requested from site
+      default: "time_add"
+      options:
+        "time_add": "created"
+        "seeders": "seeders"
+        "size": "size"
+    - name: type
+      type: select
+      label: Order requested from site
+      default: "desc"
+      options:
+        "desc": "desc"
+        "asc": "asc"
+
 
   search:
     paths:
-      - path: "{{ if .Keywords }}usearch/{{ .Keywords }}/{{else}}new/{{end}}"
+      - path: "{{ if .Keywords }}usearch/{{ .Keywords }}/{{else}}new/{{end}}?field={{ .Config.sort }}&sorder={{ .Config.type }}"
+
     rows:
       selector: table[class="data"] tr[id]
+
     fields:
       category:
+        text: other
+      category|noappend:
         optional: true
         selector: span[id^="cat_"] > strong > a
         attribute: href
         filters:
+          - name: tolower
           - name: trim
             args: /
+       # proxy uses Video for both TV and Movies
+      category:
+        optional: true
+        selector: span[id^="cat_"] > strong > a:contains("Video")
+        filters:
+          - name: replace
+            args: ["Video", "movies"]
       title:
         selector: td:nth-child(1) > div > div > a[class="cellMainLink"]
       details:
         selector: td:nth-child(1) > div > div > a[class="cellMainLink"]
         attribute: href
       download:
+        optional: true
+        # the official site delivers mylink so we skip to the magnet URI
         selector: td:nth-child(1) > div > a[data-download=""]
         attribute: href
         filters:
           - name: querystring
             args: url
-          - name: urldecode
+      download:
+        optional: true
+        # the proxy delivers magnet URI
+        selector: a[href^="magnet:?xt="]
+        attribute: href
       size:
         selector: td:nth-child(2)
         filters:
@@ -71,6 +116,10 @@
           - name: replace
             args: ["N/A", "0"]
       leechers:
+        # default for proxy which has an empty leechers selector
+        text: 0
+      leechers:
+        optional: true
         selector: td:nth-child(5)
         filters:
           - name: replace
@@ -78,7 +127,7 @@
       description:
         selector: td:nth-child(1) > div > div > span
       downloadvolumefactor:
-        text: "0"
+        text: 0
       uploadvolumefactor:
-        text: "1"
-
+        text: 1
+# engine n/a

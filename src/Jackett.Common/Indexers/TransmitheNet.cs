@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
@@ -17,13 +17,13 @@ namespace Jackett.Common.Indexers
 {
     public class TransmitheNet : BaseWebIndexer
     {
-        private string LoginUrl { get { return SiteLink + "login.php"; } }
-        private string SearchUrl { get { return SiteLink + "torrents.php?action=basic&order_by=time&order_way=desc&search_type=0&taglist=&tags_type=0"; } }
+        private string LoginUrl => SiteLink + "login.php";
+        private string SearchUrl => SiteLink + "torrents.php?action=basic&order_by=time&order_way=desc&search_type=0&taglist=&tags_type=0";
 
         private new ConfigurationDataBasicLogin configData
         {
-            get { return (ConfigurationDataBasicLogin)base.configData; }
-            set { base.configData = value; }
+            get => (ConfigurationDataBasicLogin)base.configData;
+            set => base.configData = value;
         }
 
         public TransmitheNet(IIndexerConfigurationService configService, Utils.Clients.WebClient c, Logger l, IProtectionService ps)
@@ -82,23 +82,24 @@ namespace Jackett.Common.Indexers
                 await DoLogin();
             }
 
-            string Url;
-            if (string.IsNullOrEmpty(query.GetQueryString()))
-                Url = SearchUrl;
-            else
-            {
-                Url = $"{SearchUrl}&searchtext={WebUtility.UrlEncode(query.GetQueryString())}";
-            }
+            // #6413
+            //string Url;
+            //if (string.IsNullOrEmpty(query.GetQueryString()))
+            //    Url = SearchUrl;
+            //else
+            //{
+            var Url = $"{SearchUrl}&searchtext={WebUtility.UrlEncode(query.GetQueryString())}";
+            //}
 
             var response = await RequestStringWithCookiesAndRetry(Url);
-            List<ReleaseInfo> releases = ParseResponse(response.Content);
+            var releases = ParseResponse(response.Content);
 
             return releases;
         }
 
         public List<ReleaseInfo> ParseResponse(string htmlResponse)
         {
-            List<ReleaseInfo> releases = new List<ReleaseInfo>();
+            var releases = new List<ReleaseInfo>();
 
             try
             {
@@ -115,7 +116,7 @@ namespace Jackett.Common.Indexers
                 {
                     var release = new ReleaseInfo();
 
-                    string title = row.QuerySelector("a[data-src]").GetAttribute("data-src");
+                    var title = row.QuerySelector("a[data-src]").GetAttribute("data-src");
                     if (string.IsNullOrEmpty(title) || title == "0")
                     {
                         title = row.QuerySelector("a[data-src]").TextContent;
@@ -137,12 +138,15 @@ namespace Jackett.Common.Indexers
                     release.Category = new List<int> { TvCategoryParser.ParseTvShowQuality(release.Title) };
 
                     var timeAnchor = row.QuerySelector("span[class='time']");
-                    release.PublishDate = DateTime.ParseExact(timeAnchor.GetAttribute("title"), "MMM dd yyyy, HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal);
+                    var publishdate = timeAnchor.GetAttribute("title");
+                    release.PublishDate = !string.IsNullOrEmpty(publishdate) && publishdate.Contains(",")
+                        ? DateTime.ParseExact(publishdate, "MMM dd yyyy, HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal)
+                        : DateTime.ParseExact(timeAnchor.TextContent.Trim(), "MMM dd yyyy, HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal);
                     release.Seeders = ParseUtil.CoerceInt(timeAnchor.ParentElement.NextElementSibling.NextElementSibling.TextContent.Trim());
                     release.Peers = ParseUtil.CoerceInt(timeAnchor.ParentElement.NextElementSibling.NextElementSibling.NextElementSibling.TextContent.Trim()) + release.Seeders;
                     release.Size = ReleaseInfo.GetBytes(timeAnchor.ParentElement.PreviousElementSibling.TextContent);
                     release.MinimumRatio = 1;
-                    release.MinimumSeedTime = 172800;
+                    release.MinimumSeedTime = 172800; // 48 hours
 
                     release.Files = ParseUtil.CoerceLong(row.QuerySelector("td > div:contains(\"Files:\")").TextContent.Split(':')[1].Trim());
                     release.Grabs = ParseUtil.CoerceLong(row.QuerySelector("td:nth-last-child(3)").TextContent);

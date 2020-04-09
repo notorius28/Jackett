@@ -6,6 +6,8 @@
   type: private
   encoding: UTF-8
   links:
+    - https://www.bigtorrent.eu/
+  legacylinks:
     - http://www.bigtorrent.eu/
 
   caps:
@@ -55,7 +57,8 @@
 
   download:
     selector: a[href^="download.php?id="]
-        
+    attribute: href
+
   search:
     paths:
       - path: browse.php

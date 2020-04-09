@@ -4,7 +4,7 @@
   description: "XtremeWrestlingTorrents (XWT) is a Private Torrent Tracker for PROFESSIONAL WRESTLING / MMA"
   language: en-us
   type: private
-  encoding: UTF-8
+  encoding: windows-1252
   links:
     - https://xtremewrestlingtorrents.net/
 
@@ -58,6 +58,8 @@
       - {id: 54, cat: TV/Sport, desc: "WWE Superstars HD"}
       - {id: 19, cat: TV/Sport, desc: "WWE Velocity"}
       - {id: 31, cat: TV/Sport, desc: "WWE Vintage"}
+      - {id: 74, cat: TV/Sport, desc: "AEW"}
+      - {id: 75, cat: TV/Sport, desc: "AEW HD"}
 
     modes:
       search: [q]
@@ -74,21 +76,37 @@
       type: checkbox
       label: "Use SeedBox Download Link"
       default: false
+    - name: sort
+      type: select
+      label: Sort requested from site
+      default: "4"
+      options:
+        "4": "created"
+        "7": "seeders"
+        "5": "size"
+        "1": "title"
+    - name: type
+      type: select
+      label: Order requested from site
+      default: "desc"
+      options:
+        "desc": "desc"
+        "asc": "asc"
 
   login:
-    path: login.php
-    method: form
-    form: form[action="tlogin.php"]
+    path: takelogin.php
+    method: post
     inputs:
       username: "{{ .Config.username }}"
       password: "{{ .Config.password }}"
+      returnto: "/"
     error:
       - selector: table.main:contains("Login failed!")
         message:
           selector: table tr td.text
     test:
       path: browse.php
-      selector: div#wel-messeng:has(a[href="logout.php"])
+      selector: a[href="logout.php"]
 
   ratio:
     path: browse.php
@@ -96,16 +114,18 @@
 
   search:
     paths:
-      # http://xtremewrestlingtorrents.net/browse.php?search=halftime+heat&c16=1&c65=1&c10=1&c54=1&c76=1&c46=1&c51=1&c31=1&c11=1&incldead=1
+      # http://xtremewrestlingtorrents.net/browse.php?search=halftime+heat&c46=1&c51=1&c31=1&c11=1&incldead=1
       - path: browse.php
     inputs:
-      $raw: "{{range .Categories}}c{{.}}=1&{{end}}"
-      incldead: "1"
+      $raw: "{{ range .Categories }}c{{.}}=1&{{end}}"
+      incldead: 1
       search: "{{ .Keywords }}"
-      sort: "4" # date
-      type: "desc"
+      sort: "{{ .Config.sort }}"
+      type: "{{ .Config.type }}"
+
     rows:
       selector: table[border="0"][cellspacing="0"][cellpadding="5"] tr:has(a[href^="download.php?id="])
+
     fields:
       category:
         selector: a[href^="browse.php?cat="]
@@ -132,10 +152,8 @@
       grabs:
         selector: td:nth-child(7)
         filters:
-          - name: replace
-            args: ["times", ""]
-          - name: replace
-            args: ["time", ""]
+          - name: regexp
+            args: (\d+)
       size:
         selector: td:nth-child(6)
       seeders:
@@ -149,8 +167,8 @@
             args: "2006-01-0215:04:05"
       downloadvolumefactor:
         case:
-          img[src="pic/freeleech.png"]: "0"
-          "*": "1"
+          img[src="pic/freeleech.png"]: 0
+          "*": 1
       uploadvolumefactor:
-        case:
-          "*": "1"
+        text: 1
+# engine n/a

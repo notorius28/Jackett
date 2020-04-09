@@ -6,8 +6,8 @@
   type: private
   encoding: UTF-8
   links:
-    - http://www.bitturk.net/
-  
+    - http://www.bitturk.net/ # site does not support https ERR_CONNECTION_REFUSED
+
   caps:
     categorymappings:
       - {id: 69, cat: Movies, desc: "BiTTuRK Altın"}
@@ -20,6 +20,7 @@
       - {id: 67, cat: XXX, desc: "XxX"}
       - {id: 68, cat: Movies, desc: "Dual (TR-~)"}
       - {id: 58, cat: Movies, desc: "Film"}
+      - {id: 72, cat: Movies, desc: "Belgesel"}
       - {id: 60, cat: Movies/3D, desc: "3D"}
       - {id: 45, cat: Movies, desc: "Eğitim / Prog "}
       - {id: 1, cat: Movies, desc: "Filmler"}
@@ -52,12 +53,12 @@
       - {id: 50, cat: TV, desc: "Yab@ncı Dizi"}
       - {id: 51, cat: TV, desc: "Yerli Dizi"}
       - {id: 44, cat: Books, desc: "E-BooK"}
-      
+
     modes:
       search: [q]
       tv-search: [q, season, ep]
       movie-search: [q]
-      
+
   settings:
     - name: username
       type: text
@@ -69,18 +70,32 @@
       type: info
       label: Layout
       default: "<ol><li>Only the English Classic profile is supported.<li>Make sure to set the <b>Torrent Listing (Listeleme Biçimi)</b> option in your profile to <b>Classic (Klasik)</b><li>And set the <b>Language (Dil)</b> to <b>English</b><li>Using the <i>Modern</i> theme will prevent results, and using <i>Turkish</i> will prevent upload dates.</ol>"
-      
+    - name: sort
+      type: select
+      label: Sort requested from site
+      default: "added"
+      options:
+        "added": "created"
+        "seeders": "seeders"
+        "size": "size"
+    - name: type
+      type: select
+      label: Order requested from site
+      default: "desc"
+      options:
+        "desc": "desc"
+        "asc": "asc"
+
   login:
     path: ?p=home&pid=1
     method: form
     form: form#loginbox_form
     submitpath: ajax/login.php
     inputs:
-      action: "login"
+      action: login
       loginbox_membername: "{{ .Config.username }}"
       loginbox_password: "{{ .Config.password }}"
       loginbox_remember: 1
-      loginbox_remember: "true"
     selectorinputs:
       securitytoken:
         selector: "script:contains(\"stKey: \")"
@@ -92,24 +107,28 @@
     test:
       path: ?p=home&pid=1
       selector: a[href*="/?p=logout&"]
-      
+
   search:
     paths:
       - path: /
-    keywordsfilters: 
+    keywordsfilters:
       - name: re_replace
         args: ["[^a-zA-Z0-9]+", "%25"]
     inputs:
-      p: "torrents"
-      pid: "32"
-      $raw: "{{range .Categories}}cid[]={{.}}&{{end}}"
+      p: torrents
+      pid: 32
+      $raw: "{{ range .Categories }}cid[]={{.}}&{{end}}"
       keywords: "{{ .Keywords }}"
-      search_type: "name"
-      searchin: "title"
+      search_type: name
+      searchin: title
+      "sortOptions[sortBy]": "{{ .Config.sort }}"
+      "sortOptions[sortOrder]": "{{ .Config.type }}"
     error:
       - selector: div.error:not(:contains("Gösterilecek sonuç bulunamadı."))
+
     rows:
       selector: table#torrents_table_classic tr:has(td.torrent_name)
+
     fields:
       title:
         selector: a[href*="?p=torrents&pid=10&action=details"]
@@ -127,7 +146,7 @@
         attribute: href
       date:
         optional: true
-         # Uploaded 30-01-2019 15:02 by 
+         # Uploaded 30-01-2019 15:02 by
         selector: td.torrent_name:not(:contains(" at "))
         filters:
           - name: regexp
@@ -159,9 +178,10 @@
         attribute: href
       downloadvolumefactor:
         case:
-          "img[src$=\"/torrent_free.png\"]": "0.5"
-          "*": "1"
+          "img[src$=\"/torrent_free.png\"]": 0.5
+          "*": 1
       uploadvolumefactor:
         case:
-          "img[src$=\"/torrent_multiple_upload.png\"]": "2"
-          "*": "1"
+          "img[src$=\"/torrent_multiple_upload.png\"]": 2
+          "*": 1
+# TSUE 2.2

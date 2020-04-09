@@ -5,8 +5,20 @@
   language: en-us
   type: public
   encoding: UTF-8
+  followredirect: true
   links:
     - https://katcr.co/
+    - https://kat.root.yt/
+    - https://kickasstorrents.unblockninja.com/
+    - https://katcr.black-mirror.xyz/
+    - https://katcr.unblocked.casa/
+    - https://katcr.proxyportal.fun/
+    - https://katcr.uk-unblock.xyz/
+    - https://katcr.ind-unblock.xyz/
+  legacylinks:
+    - https://kickasstorrent.cr/ # possible 3rd kickasstorrent site/clone?
+    - https://katcr.to/ # possible 3rd kickasstorrent site/clone?
+    - https://kat.unblockit.pro/ # kickasstorrent-kathow proxy, not kickasstorrent
 
   caps:
     categorymappings:
@@ -87,25 +99,17 @@
       tv-search: [q, season, ep]
       movie-search: [q]
 
-  settings:
-    - name: cookie
-      type: text
-      label: Cookie
-    - name: info
-      type: info
-      label: How to get the Cookie
-      default: "<ol><li>Login to this tracker in your browser<li>Open the <b>DevTools</b> panel by pressing <b>F12</b><li>Select the <b>Network</b> tab<li>Click on the <b>Doc</b> button<li>Refresh the page by pressing <b>F5</b><li>Select the <b>Headers</b> tab<li>Find 'cookie:' in the <b>Request Headers</b> section<li>Copy & paste the whole cookie string to here</ol>"
-
-  login:
-    method: cookie
-    test:
-      path: category/latest/page/1
+  settings: []
 
   search:
     paths:
-      - path: "{{ if .Keywords }}katsearch/page/1/{{ .Keywords }}{{ else }}category/latest/page/1{{ end }}"
+      - path: "{{ if .Keywords }}katsearch/page/1/{{ .Keywords }}{{else}}category/latest/page/1{{end}}"
+
     rows:
       selector: table.torrents_table > tbody > tr
+      filters:
+        - name: andmatch
+
     fields:
       title:
         selector: a.torrents_table__torrent_title b
@@ -195,7 +199,16 @@
       files:
         selector: td[data-title="Files"]
       date:
-        selector: td[data-title="Age"]
+        selector: td[data-title="Age"]:contains("-")
+        attribute: title
+        optional: true
+        filters:
+          - name: dateparse
+            args: "2006-01-02"
+      date:
+        selector: td[data-title="Age"]:not(:contains("-"))
+        attribute: title
+        optional: true
         filters:
           - name: dateparse
             args: "2006-01-02 15:04:05"
@@ -204,6 +217,7 @@
       leechers:
         selector: td[data-title="Leech"]
       downloadvolumefactor:
-        text: "0"
+        text: 0
       uploadvolumefactor:
-        text: "1"
+        text: 1
+# engine n/a

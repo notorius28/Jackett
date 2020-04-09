@@ -1,4 +1,4 @@
-﻿using Jackett.Common.Indexers.Abstract;
+using Jackett.Common.Indexers.Abstract;
 using Jackett.Common.Models;
 using Jackett.Common.Services.Interfaces;
 using Jackett.Common.Utils.Clients;
@@ -8,16 +8,20 @@ namespace Jackett.Common.Indexers
 {
     public class AlphaRatio : GazelleTracker
     {
-        public AlphaRatio(IIndexerConfigurationService configService, WebClient webClient, Logger logger, IProtectionService protectionService)
-            : base(name: "AlphaRatio",
-                desc: "AlphaRatio (AR) is a Private Torrent Tracker for 0DAY / GENERAL",
-                link: "https://alpharatio.cc/",
-                configService: configService,
-                logger: logger,
-                protectionService: protectionService,
-                webClient: webClient,
-                supportsFreeleechTokens: true
-                )
+        public AlphaRatio(IIndexerConfigurationService configService, WebClient wc, Logger l, IProtectionService ps)
+            : base("AlphaRatio",
+                   description: "AlphaRatio (AR) is a Private Torrent Tracker for 0DAY / GENERAL",
+                   link: "https://alpharatio.cc/",
+                   caps: new TorznabCapabilities
+                   {
+                       SupportsImdbMovieSearch = true
+                   },
+                   configService: configService,
+                   client: wc,
+                   logger: l,
+                   p: ps,
+                   supportsFreeleechTokens: true,
+                   imdbInTags: true)
         {
             Language = "en-us";
             Type = "private";
@@ -54,9 +58,7 @@ namespace Jackett.Common.Indexers
             AddCategoryMapping(30, TorznabCatType.Other, "Misc");
         }
 
-        protected override string GetSearchTerm(TorznabQuery query)
-        {
-            return query.GetQueryString().Replace(".", " "); // Alpharatio can't handle dots in the searchstr
-        }
+        // Alpharatio can't handle dots in the searchstr
+        protected override string GetSearchTerm(TorznabQuery query) => query.GetQueryString().Replace(".", " ");
     }
 }

@@ -6,10 +6,11 @@
   type: private
   encoding: UTF-8
   links:
-    - https://torrent-turk.co/
+    - https://torrent-turk.de/
   legacylinks:
     - https://torrent-turk.org/
-  
+    - https://torrent-turk.co/
+
   caps:
     categorymappings:
       - {id: 149, cat: Movies, desc: "Movies/Turkish"}
@@ -26,13 +27,21 @@
       - {id: 161, cat: Movies/DVD, desc: "Movies/Foreign/DVD5-DVD9"}
       - {id: 162, cat: Movies/WEBDL, desc: "Movies/Foreign/BRRip-HDRip-DVDRip-WebDL"}
       - {id: 163, cat: Movies/Other, desc: "Movies/Foreign/Boxset"}
-      
+
       - {id: 164, cat: TV, desc: "TV"}
       - {id: 165, cat: TV, desc: "TV/Turkish"}
       - {id: 166, cat: TV, desc: "TV/Foreign"}
       - {id: 167, cat: TV/Other, desc: "TV Programs"}
       - {id: 185, cat: TV/Documentary, desc: "TV/Documentary"}
       - {id: 168, cat: TV/Other, desc: "TV/Other"}
+      - {id: 169, cat: TV/Other, desc: "TV/Boxset"}
+
+      - {id: 191, cat: TV, desc: "TV/BluTv"}
+      - {id: 192, cat: TV, desc: "TV/BluTv Series"}
+      - {id: 193, cat: Movies, desc: "TV/BluTv Film"}
+      - {id: 199, cat: TV, desc: "TV/Netflix"}
+      - {id: 189, cat: TV, desc: "TV/Netflix Series"}
+      - {id: 190, cat: Movies, desc: "TV/Netflix Film"}
 
       - {id: 171, cat: Audio, desc: "Music"}
       - {id: 172, cat: Audio, desc: "Music/Turkish"}
@@ -48,12 +57,12 @@
       - {id: 179, cat: PC, desc: "OS"}
       - {id: 180, cat: PC/Games, desc: "PC/Games"}
       - {id: 181, cat: Console, desc: "Playstation"}
-    
+
     modes:
       search: [q]
       tv-search: [q, season, ep]
       movie-search: [q]
-      
+
   settings:
     - name: username
       type: text
@@ -65,14 +74,33 @@
       type: info
       label: Layout
       default: "<ol><li>Only the English Classic profile is supported.<li>Make sure to set the <b>Torrent Listing (Listeleme Biçimi)</b> option in your profile to <b>Classic (Klasik)</b><li>And set the <b>Language (Dil)</b> to <b>English</b><li>Using the <i>Modern</i> theme will prevent results, and using <i>Turkish</i> will prevent upload dates.</ol>"
-      
+    - name: sort
+      type: select
+      label: Sort requested from site
+      default: "added"
+      options:
+        "added": "created"
+        "seeders": "seeders"
+        "size": "size"
+    - name: type
+      type: select
+      label: Order requested from site
+      default: "desc"
+      options:
+        "desc": "desc"
+        "asc": "asc"
+    - name: info_results
+      type: info
+      label: Search results
+      default: "If you are getting the error: <b>An error has occured!You can't view this page unless you read all your unread messages</b>, then access the site with your browser and <b>mark as read</b> all PMs."
+
   login:
     path: ?p=home&pid=1
     method: form
-    form: form#sls_form
+    form: form#loginbox_form
     submitpath: ajax/login.php
     inputs:
-      action: "login"
+      action: login
       loginbox_membername: "{{ .Config.username }}"
       loginbox_password: "{{ .Config.password }}"
       loginbox_remember: 1
@@ -87,24 +115,29 @@
     test:
       path: ?p=torrents&type=bookmarks&pid=508
       selector: a#logout
-      
+
   search:
     paths:
       - path: /
-    keywordsfilters: 
+    keywordsfilters:
       - name: re_replace
         args: ["[^a-zA-Z0-9]+", "%25"]
     inputs:
-      p: "torrents"
-      pid: "32"
-      $raw: "{{range .Categories}}cid[]={{.}}&{{end}}"
+      p: torrents
+      pid: 32
+      $raw: "{{ range .Categories }}cid[]={{.}}&{{end}}"
       keywords: "{{ .Keywords }}"
-      search_type: "name"
-      searchin: "title"
+      search_type: name
+      searchin: title
+      "sortOptions[sortBy]": "{{ .Config.sort }}"
+      "sortOptions[sortOrder]": "{{ .Config.type }}"
     error:
       - selector: div.error:not(:contains("Hiçbir sonuç bulunamadı."))
+      # does not support imdbid search and does not return imdb link in results.
+
     rows:
       selector: table#torrents_table_classic > tbody > tr:has(td.torrent_name)
+
     fields:
       title:
         selector: a[href*="?p=torrents&pid=10&action=details"]
@@ -122,7 +155,7 @@
         attribute: href
       date:
         optional: true
-         # Uploaded 30-01-2019 15:02 by 
+         # Uploaded 30-01-2019 15:02 by
         selector: td.torrent_name:not(:contains(" at "))
         filters:
           - name: regexp
@@ -154,10 +187,11 @@
         attribute: href
       downloadvolumefactor:
         case:
-          "img[title=\"FREE!\"]": "0"
-          "img[title=\"Download Multiplier: 0.5\"]": "0.5"
-          "*": "1"
+          "img[title=\"FREE!\"]": 0
+          "img[title=\"Download Multiplier: 0.5\"]": 0.5
+          "*": 1
       uploadvolumefactor:
         case:
-          "img[title=\"Upload Multiplier: 2\"]": "2"
-          "*": "1"
+          "img[title=\"Upload Multiplier: 2\"]": 2
+          "*": 1
+# TSUE 2.2

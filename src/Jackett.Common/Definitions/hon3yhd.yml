@@ -57,8 +57,6 @@
     inputs:
       username: "{{ .Config.username }}"
       password: "{{ .Config.password }}"
-      use_ssl: "1"
-      perm_ssl: "1"
     error:
       - selector: tbody:has(td.colhead > span:contains("Error"))
       - selector: tbody:has(td.colhead > span:contains("failed"))

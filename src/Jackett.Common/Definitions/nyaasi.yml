@@ -7,18 +7,14 @@
   encoding: UTF-8
   links:
     - https://nyaa.si/
-  certificates:
-    - 3801e330482d4f9baef71ca4e33ba23ede74f59c # incomplete CA chain
-    
+    - https://nyaa.root.yt/
+    - https://nyaa.black-mirror.xyz/
+    - https://nyaa.unblocked.casa/
+    - https://nyaa.proxyportal.fun/
+    - https://nyaa.uk-unblock.xyz/
+    - https://nyaa.ind-unblock.xyz/
+
   settings:
-    - name: filter-id
-      type: select
-      label: Filter
-      default: "0"
-      options:
-        0: No filter
-        1: No remakes
-        2: Trusted only
     - name: cat-id
       type: select
       label: Category
@@ -37,9 +33,32 @@
         3_1: "Literature - English-translated"
         3_2: "Literature - Non-English-translated"
         3_3: "Literature - Lossy"
+        4_0: "Live Action"
+        4_1: "Live Action - English"
+        4_2: "Live Action - Idol/PV"
+        4_3: "Live Action - Non-English"
+        4_4: "Live Action - Raw"
+        5_0: "Pictures"
+        5_1: "Pictures  - Graphics"
+        5_2: "Pictures  - Photos"
         6_0: "Software"
         6_1: "Software - Applications"
         6_2: "Software - Games"
+    - name: sort
+      type: select
+      label: Sort requested from site
+      default: "id"
+      options:
+        "id": "created"
+        "seeders": "seeders"
+        "size": "size"
+    - name: type
+      type: select
+      label: Order requested from site
+      default: "desc"
+      options:
+        "desc": "desc"
+        "asc": "asc"
 
   caps:
     categorymappings:
@@ -86,11 +105,15 @@
     paths:
       - path: /
     inputs:
-      q: "{{ .Query.Keywords}}"
-      f: "{{ .Config.filter-id }}"
+      q: "{{ .Keywords }}"
+      f: 0
       c: "{{ .Config.cat-id }}"
+      s: "{{ .Config.sort }}"
+      o: "{{ .Config.type }}"
+
     rows:
       selector: tr.default,tr.danger,tr.success
+
     fields:
       category:
         selector: td:nth-child(1) a
@@ -100,12 +123,19 @@
             args: [ "=", -1 ]
       title:
         selector: td:nth-child(2) a:last-of-type
+      title:
+        selector: td:nth-child(2) a:last-of-type:contains("[PuyaSubs!] ")
+        optional: true
+        filters:
+          - name: append
+            args: " [Spanish]"
       details:
         selector: td:nth-child(2) a:last-of-type
         attribute: href
       download:
         selector: td:nth-child(3) a[href$=".torrent"]
         attribute: href
+        optional: true
       magnet:
         selector: td:nth-child(3) a[href^="magnet:?"]
         attribute: href
@@ -119,12 +149,34 @@
           - name: dateparse
             args: "2006-01-02 15:04 -07"
       seeders:
-        selector: td:nth-child(6)
+        selector: td:nth-child(6):empty
+        optional: true
+        filters:
+          - name: append
+            args: 0
+      seeders:
+        selector: td:nth-child(6):not(:empty)
+        optional: true
       leechers:
-        selector: td:nth-child(7)
+        selector: td:nth-child(7):empty
+        optional: true
+        filters:
+          - name: append
+            args: 0
+      leechers:
+        selector: td:nth-child(7):not(:empty)
+        optional: true
       grabs:
-        selector: td:nth-child(8)
+        selector: td:nth-child(8):empty
+        optional: true
+        filters:
+          - name: append
+            args: 0
+      grabs:
+        selector: td:nth-child(8):not(:empty)
+        optional: true
       downloadvolumefactor:
-        text: "0"
+        text: 0
       uploadvolumefactor:
-        text: "1"
+        text: 1
+# engine n/a

@@ -1,11 +1,10 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Xml.Linq;
 using Jackett.Common.Models;
 using Jackett.Common.Models.IndexerConfig;
 using Jackett.Common.Services.Interfaces;
-using Jackett.Common.Utils;
 using Jackett.Common.Utils.Clients;
 using NLog;
 
@@ -31,7 +30,7 @@ namespace Jackett.Common.Indexers.Feeds
                 SearchAvailable = true,
                 TVSearchAvailable = false,
                 MovieSearchAvailable = false,
-                SupportsImdbSearch = false,
+                SupportsImdbMovieSearch = false,
                 SupportsTVRageSearch = false
             };
 
@@ -47,16 +46,18 @@ namespace Jackett.Common.Indexers.Feeds
             if (enclosures.Any())
             {
                 var enclosure = enclosures.First().Attribute("url").Value;
-                release.Link = enclosure.ToUri();
+                release.Link = new Uri(enclosure);
             }
             // add some default values if none returned by feed
             release.Seeders = release.Seeders > 0 ? release.Seeders : 0;
             release.Peers = release.Peers > 0 ? release.Peers : 0;
+            release.MinimumRatio = 1;
+            release.MinimumSeedTime = 172800; // 48 hours
             release.DownloadVolumeFactor = release.DownloadVolumeFactor > 0 ? release.DownloadVolumeFactor : 0;
             release.UploadVolumeFactor = release.UploadVolumeFactor > 0 ? release.UploadVolumeFactor : 1;
             return release;
         }
 
-        protected override Uri FeedUri => new Uri(SiteLink + "/feed/api");
+        protected override Uri FeedUri => new Uri(SiteLink.Replace("://", "://feed.") + "api");
     }
 }

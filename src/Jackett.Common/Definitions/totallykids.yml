@@ -1,4 +1,4 @@
-﻿---
+---
   site: totallykids
   name: TotallyKids
   description: "TotallyKids (TK) is a Private Torrent Tracker for CHILDRENS MOVIES / TV / GENERAL"
@@ -6,7 +6,7 @@
   type: private
   encoding: UTF-8
   links:
-    - http://www.totallykids.tv/
+    - http://www.totallykids.tv/ # site does not support https NET::ERR_CERT_AUTHORITY_INVALID
 
   settings:
     - name: username
@@ -18,8 +18,23 @@
     - name: info_results
       type: info
       label: "Search results"
-      default: "For best results, increase the torrents number in your profile to 100.<br />Default is 15."
-
+      default: "Only the <b>xBtit_Default</b> style is supported with this indexer.<br />For best results, increase the torrents number in your profile to 100.<br />Default is 15."
+    - name: sort
+      type: select
+      label: Sort requested from site
+      default: "data"
+      options:
+        "data": "created"
+        "seeds": "seeders"
+        "size": "size"
+        "filename": "title"
+    - name: type
+      type: select
+      label: Order requested from site
+      default: "DESC"
+      options:
+        "DESC": "desc"
+        "ASC": "asc"
   caps:
     categorymappings:
       - {id:  5, cat: Audio, desc: "Music"}
@@ -35,9 +50,9 @@
       - {id: 24, cat: TV, desc: "Teens"}
 
     modes:
-      search: [q]
-      tv-search: [q, season, ep]
-      movie-search: [q]
+      search: [q, imdbid]
+      tv-search: [q, season, ep, imdbid]
+      movie-search: [q, imdbid]
       music-search: [q]
 
   login:
@@ -59,13 +74,18 @@
       - path: index.php
     inputs:
       page: torrents
-      search: "{{ if .Keywords }}{{ .Keywords }}{{else}}{{end}}"
-      category: "{{if .Categories}}{{range .Categories}}{{.}};{{end}}{{else}}0{{end}}"
-      options: 0
+      search: "{{ if .Query.IMDBID }}{{ .Query.IMDBID }}{{else}}{{ .Keywords }}{{end}}"
+      category: "{{ if .Categories }}{{ range .Categories }}{{.}};{{end}}{{else}}0{{end}}"
+      # 0=title, 1=title&descr, 2=descr
+      options: "{{ if .Query.IMDBID }}2{{else}}0{{end}}"
+      # 0 all 1 activeonly 2 deadonly
       active: 0
+      order: "{{ .Config.sort }}"
+      by: "{{ .Config.type }}"
 
     rows:
       selector: table.lista tr td table.lista tr:has(a[href^="index.php?page=torrent-details"])
+
     fields:
       title:
         selector: td a[href^="index.php?page=torrent-details"]
@@ -83,7 +103,7 @@
         attribute: href
       imdb:
         optional: true
-        selector: a[href*="http://www.imdb.com/title/"]
+        selector: a[href*="www.imdb.com/title/tt"]
         attribute: href
         filters:
           # http://anonym.to?javascript:popdetails('http://www.imdb.com/title/tt0086817');
@@ -91,6 +111,14 @@
             args: [" http://anonym.to?javascript:popdetails('", ""]
           - name: replace
             args: ["');", ""]
+      banner:
+        selector: td a[href^="index.php?page=torrent-details"]
+        attribute: onmouseover
+        filters:
+          - name: regexp
+            args: "src=(.+?) width"
+          - name: replace
+            args: ["torrentimg/nocover.jpg", ""]
       size:
         selector: td:nth-child(10)
       # two flavours of dates
@@ -118,8 +146,8 @@
         selector: td:nth-child(8)
       downloadvolumefactor:
         case:
-          img[src="gold/gold.gif"]: "0"
-          "*": "1"
+          img[src="gold/gold.gif"]: 0
+          "*": 1
       uploadvolumefactor:
-        text: "1"
-
+        text: 1
+# xbtit
