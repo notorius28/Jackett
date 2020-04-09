@@ -152,15 +152,19 @@
             args: ["(?i)B[DR]RIP", "Bluray"]
         # language parser
           - name: re_replace
+            args: ["(i)Spanish.{1,2}English","Spanish(Dual)"]
+          - name: re_replace
+            args: ["(i)ESP.{1,2}ENG","Spanish(Dual)"]
+          - name: re_replace
             args: ["(?i)Castellano", "Spanish"]
           - name: re_replace
-            args: ["(?i)Dual","Spanish-English"]
+            args: ["(?i)Dual","Spanish(Dual)"]
           - name: re_replace
             args: ["(?i)CAST","Spanish"]
           - name: re_replace
             args: ["(?i)CAST","Spanish"]
           - name: re_replace
-            args: ["(?i)(AC3|DTS)[\\[\\(]E[SN][].E[SN][\\]\\)]","$1 [Spanish-English]"]
+            args: ["(?i)(AC3|DTS)[\\[\\(]E[SN].E[SN][\\]\\)]","$1 [Spanish(Dual)]"]
           - name: re_replace
             args: ["(?i)(AC3|DTS)[\\[\\(]ES[\\]\\)]","$1 [Spanish]"]
 
